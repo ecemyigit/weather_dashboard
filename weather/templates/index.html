@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Weather Dashboard</h1>
+
+        {% if user.is_authenticated %}
+            <p>Welcome, {{ user.username }}! <a href="{% url 'logout' %}">Logout</a></p>
+            <div id="favorites">
+                <h3>Your Favorite Locations</h3>
+                {% for favorite in user.favorite_set.all %}
+                    <div class="favorite">
+                        <span>{{ favorite.city }}</span>
+                        <button class="remove-favorite" data-city="{{ favorite.city }}">Remove</button>
+                    </div>
+                {% endfor %}
+                <div>
+                    <input type="text" id="favoriteCity" class="form-control" placeholder="Enter city to favorite">
+                    <button id="addFavorite" class="btn btn-success">Add to Favorites</button>
+                </div>
+            </div>
+        {% else %}
+            <a href="{% url 'register' %}">Register</a> | <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+
+        <form id="weatherForm">
+            <div class="form-group">
+                <label for="city">City:</label>
+                <input type="text" id="city" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Get Weather</button>
+            <button type="button" id="getForecast" class="btn btn-info">Get 5-Day Forecast</button>
+        </form>
+        <div id="weatherResult" class="mt-4"></div>
+        <div id="forecastResult" class="mt-4"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script>
+       $('#weatherForm').submit(function(event) {
+    event.preventDefault();
+    var city = $('#city').val();
+    fetch(`/weather/?city=${city}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                $('#weatherResult').html(`<div class="alert alert-danger">${data.error}</div>`);
+            } else if (data.main && data.main.temp) { // Check if data.main and data.main.temp exist
+                $('#weatherResult').html(`
+                    <p>Temperature: ${data.main.temp} °C</p>
+                    <p>Humidity: ${data.main.humidity}%</p>
+                    <p>Wind Speed: ${data.wind.speed} m/s</p>
+                    <p>Description: ${data.weather[0].description}</p>
+                `);
+            } else {
+                $('#weatherResult').html(`<div class="alert alert-warning">Weather data not available.</div>`);
+            }
+        }).catch(error => {
+            $('#weatherResult').html(`<div class="alert alert-danger">Error: ${error.message}</div>`);
+        });
+});
+        $('#getForecast').click(function() {
+            var city = $('#city').val();
+            fetch(`/forecast/?city=${city}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        $('#forecastResult').html(`<div class="alert alert-danger">${data.error}</div>`);
+                    } else {
+                        let forecastHtml = '<h3>5-Day Forecast</h3>';
+                        data.list.forEach((forecast, index) => {
+                            if(index % 8 === 0){
+                                forecastHtml += `
+                                    <p><strong>${new Date(forecast.dt_txt).toDateString()}:</strong>
+                                    Temp: ${forecast.main.temp} °C,
+                                    ${forecast.weather[0].description}</p>
+                                `;
+                            }
+                        });
+                        $('#forecastResult').html(forecastHtml);
+                    }
+                });
+        });
+     $('#addFavorite').click(function() {
+            var city = $('#favoriteCity').val();
+            $.post('/add_favorite/', {city: city, csrfmiddlewaretoken: '{{ csrf_token }}'})
+                .done(function(data) {
+                    if(data.status == 'success') {
+                        // Append to favorites list in the DOM
+                        $('#favorites').append(`<div class="favorite"><span>${city}</span><button class="remove-favorite" data-city="${city}">Remove</button></div>`);
+                        $('#favoriteCity').val(''); // Clear the input field
+                    } else {
+                        // Handle error
+                        alert(data.message);
+                    }
+                });
+        });
+
+        $(document).on('click', '.remove-favorite', function() {
+            var city = $(this).data('city');
+            var button = $(this);
+            $.post('/remove_favorite/', {city: city, csrfmiddlewaretoken: '{{ csrf_token }}'})
+                .done(function(data) {
+                    if(data.status == 'success') {
+                        // Remove from favorites list in the DOM
+                        button.parent().remove();
+                    } else {
+                        // Handle error
+                        alert(data.message);
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

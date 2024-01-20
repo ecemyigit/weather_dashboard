@@ -62,11 +62,6 @@ The application will be accessible at `http://localhost:8000` by default.
 - Weather data provided by [OpenWeatherMap](https://openweathermap.org/).
 - Bootstrap CSS framework: [Bootstrap](https://getbootstrap.com/).
 
-## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-## Acknowledgments
-
-- Special thanks to [OpenWeatherMap](https://openweathermap.org/) for providing weather data.
 - Built as a learning project for web development with Django, Bootstrap, and jQuery.

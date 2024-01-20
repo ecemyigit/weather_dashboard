@@ -6,6 +6,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.shortcuts import render, redirect
 from .models import Favorite
+import os
 
 
 def logout_view(request):
@@ -41,7 +42,7 @@ def login_view(request):
     return render(request, 'login.html', {'form': form})
 
 def get_weather_data(city):
-    api_key = 'af686e2d8a290cbebb43cc15fe5f69a4'
+    api_key = os.getenv('API_KEY')
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     try:
         response = requests.get(url)
@@ -56,7 +57,7 @@ def weather(request):
     return JsonResponse(data)
 
 def get_forecast_data(city):
-    api_key = 'af686e2d8a290cbebb43cc15fe5f69a4'
+    api_key = os.getenv('API_KEY')
     url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
     response = requests.get(url)
     return response.json()
